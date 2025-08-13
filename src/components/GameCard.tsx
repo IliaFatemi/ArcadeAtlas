@@ -4,7 +4,6 @@ import type { LatestGame } from "../types";
 
 export default function GameCard({ game }: { game: LatestGame }) {
   const { imgURL, title, details, genre, releaseYear, id } = game;
-  console.log(game);
   return (
     <motion.article
       initial={{ y: 12, opacity: 0 }}

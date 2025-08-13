@@ -3,6 +3,11 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import type { GameDetails } from "../api";
 import { fetchGameById } from "../api";
 import axios from "axios";
+import { useUserData } from "../userdata/store";
+import type { GameSnap, ListType } from "../userdata/types";
+import ReviewsSection from "../components/ReviewsSection";
+import AchievementsSection from "../components/AchievementsSection";
+import CollectionButtons from "../components/CollectionButtons";
 
 const fix = (u?: string) => (!u ? "" : u.startsWith("//") ? `https:${u}` : u);
 const yearOf = (sec?: number) =>
@@ -31,37 +36,42 @@ const webLabel = (c?: number, url?: string) => {
 };
 const yt = (id?: string) => (id ? `https://www.youtube.com/embed/${id}` : "");
 
-type Loc = { state?: { preview?: any } };
+// type Loc = { state?: { preview?: any } };
 
 export default function GameDetailsPage() {
   const { id } = useParams();
-  const loc = useLocation() as Loc;
-
-  // Keep preview content if present (so no flicker)
-  const [game, setGame] = useState<GameDetails | null>(
-    loc.state?.preview
-      ? ({
-          id: loc.state.preview.id,
-          name: loc.state.preview.title ?? loc.state.preview.name ?? "Unknown",
-          summary: loc.state.preview.details ?? "",
-          first_release_date:
-            loc.state.preview.first_release_date ??
-            (loc.state.preview.releaseYear
-              ? Date.UTC(loc.state.preview.releaseYear, 0, 1) / 1000
-              : undefined),
-          cover: loc.state.preview.imgURL
-            ? { url: loc.state.preview.imgURL }
-            : undefined,
-        } as GameDetails)
-      : null
-  );
+  // const loc = useLocation() as Loc;
+  const [game, setGame] = useState<GameDetails | null>(null); // 2)
   const [error, setError] = useState<string | null>(null);
 
+  // // Keep preview content if present (so no flicker)
+  // const [game, setGame] = useState<GameDetails | null>(
+  //   loc.state?.preview
+  //     ? ({
+  //         id: loc.state.preview.id,
+  //         name: loc.state.preview.title ?? loc.state.preview.name ?? "Unknown",
+  //         summary: loc.state.preview.details ?? "",
+  //         first_release_date:
+  //           loc.state.preview.first_release_date ??
+  //           (loc.state.preview.releaseYear
+  //             ? Date.UTC(loc.state.preview.releaseYear, 0, 1) / 1000
+  //             : undefined),
+  //         cover: loc.state.preview.imgURL
+  //           ? { url: loc.state.preview.imgURL }
+  //           : undefined,
+  //       } as GameDetails)
+  //     : null
+  // );
+  // const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
+    // 4)
     if (!id) return;
     const ctrl = new AbortController();
+    setError(null);
+    setGame(null); // clean page when navigating to a new id
     fetchGameById(Number(id), ctrl.signal)
-      .then((d) => setGame((g) => ({ ...g, ...d } as GameDetails)))
+      .then(setGame)
       .catch((e: any) => {
         if (
           axios.isCancel?.(e) ||
@@ -74,15 +84,23 @@ export default function GameDetailsPage() {
     return () => ctrl.abort();
   }, [id]);
 
+  const year = useMemo(
+    // 5) computed value hook is fine
+    () =>
+      game?.first_release_date
+        ? new Date(game.first_release_date * 1000).getUTCFullYear()
+        : undefined,
+    [game?.first_release_date]
+  );
+
+  // ---- from here you can conditionally render; no new hooks below ----
   if (error)
     return (
-      <div className="mx-auto max-w-6xl px-4 py-10 text-red-300">{error}</div>
+      <div className="mx-auto max-w-6xl px-4 py-8 text-red-300">{error}</div>
     );
   if (!game)
     return (
-      <div className="mx-auto max-w-6xl px-4 py-10 text-slate-300">
-        Loading…
-      </div>
+      <div className="mx-auto max-w-6xl px-4 py-8 text-slate-300">Loading…</div>
     );
 
   const yr = yearOf(game.first_release_date);
@@ -103,6 +121,37 @@ export default function GameDetailsPage() {
   const shots = (game.screenshots ?? []).slice(0, 6).map((m) => fix(m.url));
   const trailer = yt(game.videos?.[0]?.video_id);
   const similar = (game.similar_games ?? []).slice(0, 10);
+
+  const snap: GameSnap = {
+    id: game.id,
+    title: game.name,
+    imgURL:
+      (game.cover?.url?.startsWith("//")
+        ? `https:${game.cover.url}`
+        : game.cover?.url) ?? undefined,
+    genre: game.genres?.[0]?.name ?? null,
+    releaseYear: yr ?? null,
+  };
+
+  function inList(list: ListType): boolean {
+    const { state, dispatch } = useUserData();
+    if (!game) {
+      return false;
+    }
+    return Boolean(state.lists[list]?.[game.id]);
+  }
+
+  function toggle(list: ListType) {
+    const { state, dispatch } = useUserData();
+    if (inList(list)) {
+      if (!game) {
+        return null;
+      }
+      dispatch({ type: "REMOVE_FROM_LIST", list, gameId: game.id });
+    } else {
+      dispatch({ type: "ADD_TO_LIST", list, snap });
+    }
+  }
 
   return (
     <div className="relative">
@@ -308,6 +357,12 @@ export default function GameDetailsPage() {
             </div>
           )}
 
+          {/* Reviews */}
+          <ReviewsSection gameId={game.id} />
+
+          {/* Achievements */}
+          <AchievementsSection gameId={game.id} />
+
           <div className="mt-4 flex gap-2">
             <Link
               to="/"
@@ -322,6 +377,7 @@ export default function GameDetailsPage() {
               Top
             </button>
           </div>
+          <CollectionButtons game={game} year={year} />
         </aside>
       </div>
     </div>

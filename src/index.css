@@ -24,3 +24,12 @@
   animation: shimmer 1.4s ease-in-out infinite;
 }
 @keyframes shimmer { 0% {background-position: 100% 0;} 100% {background-position: 0 0;} }
+
+
+@layer components {
+  .card { @apply rounded-xl border border-slate-800 bg-slate-900; }
+  .input { @apply w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-1.5 text-sm placeholder-slate-400 outline-none focus:ring-2 ring-indigo-500/60; }
+  .select { @apply rounded-md bg-slate-900 border border-slate-700 px-2 py-1.5 text-sm outline-none focus:ring-2 ring-indigo-500/60; }
+  .btn { @apply rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-3 py-1.5; }
+  .btn-ghost { @apply rounded-md border border-slate-700 hover:bg-slate-800 text-sm px-3 py-1.5; }
+}
