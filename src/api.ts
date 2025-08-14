@@ -1,5 +1,5 @@
-import axios from "axios";
 import type { LatestGame } from "./types";
+import { http } from "./lib/http";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -39,7 +39,7 @@ export type GameDetails = {
 };
 
 export async function fetchLatestGames(signal?: AbortSignal): Promise<LatestGame[]> {
-  const res = await axios.get<LatestGame[]>(`${API_BASE}/api/latest-games`, { signal });
+  const res = await http.get<LatestGame[]>(`${API_BASE}/api/latest-games`, { signal });
   return res.data;
 }
 
@@ -47,13 +47,13 @@ export async function fetchLatestGames(signal?: AbortSignal): Promise<LatestGame
 export async function searchGames(q: string, signal?: AbortSignal) {
   if (!q.trim()) return [];
   try {
-    const res = await axios.get<LatestGame[]>(`${API_BASE}/api/search`, {
+    const res = await http.get<LatestGame[]>(`${API_BASE}/api/search`, {
       params: { title: q.trim() }, signal
     });
     return res.data;
   } catch (e: any) {
     if (e?.response?.status === 404) {
-      const res2 = await axios.get<LatestGame[]>(
+      const res2 = await http.get<LatestGame[]>(
         `${API_BASE}/api/search/${encodeURIComponent(q.trim())}`, { signal }
       );
       return res2.data;
@@ -65,7 +65,7 @@ export async function searchGames(q: string, signal?: AbortSignal) {
 
 // details: /api/searchById/<id>
 export async function fetchGameById(id: number, signal?: AbortSignal): Promise<GameDetails> {
-  const res = await axios.get(`${API_BASE}/api/searchById/${id}`, { signal });
+  const res = await http.get(`${API_BASE}/api/searchById/${id}`, { signal });
   let raw: any = res.data;
   if (typeof raw === "string") { try { raw = JSON.parse(raw); } catch {} }
   raw = raw?.data ?? raw?.result ?? raw?.game ?? raw;
