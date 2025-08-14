@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import type { GameDetails } from "../api";
 import { fetchGameById } from "../api";
 import axios from "axios";
-import { useUserData } from "../userdata/store";
-import type { GameSnap, ListType } from "../userdata/types";
 import ReviewsSection from "../components/ReviewsSection";
 import AchievementsSection from "../components/AchievementsSection";
 import CollectionButtons from "../components/CollectionButtons";
@@ -121,37 +119,6 @@ export default function GameDetailsPage() {
   const shots = (game.screenshots ?? []).slice(0, 6).map((m) => fix(m.url));
   const trailer = yt(game.videos?.[0]?.video_id);
   const similar = (game.similar_games ?? []).slice(0, 10);
-
-  const snap: GameSnap = {
-    id: game.id,
-    title: game.name,
-    imgURL:
-      (game.cover?.url?.startsWith("//")
-        ? `https:${game.cover.url}`
-        : game.cover?.url) ?? undefined,
-    genre: game.genres?.[0]?.name ?? null,
-    releaseYear: yr ?? null,
-  };
-
-  function inList(list: ListType): boolean {
-    const { state, dispatch } = useUserData();
-    if (!game) {
-      return false;
-    }
-    return Boolean(state.lists[list]?.[game.id]);
-  }
-
-  function toggle(list: ListType) {
-    const { state, dispatch } = useUserData();
-    if (inList(list)) {
-      if (!game) {
-        return null;
-      }
-      dispatch({ type: "REMOVE_FROM_LIST", list, gameId: game.id });
-    } else {
-      dispatch({ type: "ADD_TO_LIST", list, snap });
-    }
-  }
 
   return (
     <div className="relative">

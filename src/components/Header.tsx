@@ -17,12 +17,22 @@ export default function Header() {
       <div className="mx-auto max-w-6xl px-4 py-2.5 flex items-center justify-between gap-3">
         {/* left group */}
         <button onClick={() => nav("/")} className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded-lg bg-indigo-500" />
+          <img
+            src="/logo/ArcadeAtlas.svg"
+            alt="ArcadeAtlas"
+            className="h-6 w-6 rounded-lg"
+          />
           <span className="text-sm font-semibold">ArcadeAtlas</span>
         </button>
 
         {/* right group */}
         <div className="flex items-center gap-2">
+          <Link
+            to="/about"
+            className="text-xs rounded-lg border border-slate-700 px-3 py-1.5"
+          >
+            About
+          </Link>
           <Link
             to="/collections"
             className="text-xs rounded-lg border border-slate-700 px-3 py-1.5"
